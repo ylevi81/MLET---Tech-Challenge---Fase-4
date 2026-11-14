@@ -1,0 +1,19 @@
+{
+  "seed": 42,
+  "threshold": 0.5,
+  "reference_rows": 24000,
+  "holdout_rows": 6000,
+  "reference_default_rate": 0.22120833333333334,
+  "holdout_default_rate": 0.22116666666666668,
+  "roc_auc": 0.7062863818201728,
+  "average_precision": 0.48484749005460015,
+  "balanced_accuracy": 0.6607384434075985,
+  "default_precision": 0.36969155118462227,
+  "default_recall": 0.6232102486812359,
+  "confusion_matrix": {
+    "tn": 3263,
+    "fp": 1410,
+    "fn": 500,
+    "tp": 827
+  }
+}

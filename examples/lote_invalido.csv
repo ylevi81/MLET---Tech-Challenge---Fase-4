@@ -1,0 +1,4 @@
+customer_id,age,credit_limit,payment_status_m1,payment_status_m2,payment_status_m3,bill_amount_m1,bill_amount_m2,bill_amount_m3,payment_amount_m1,payment_amount_m2,payment_amount_m3,default_next_month
+1,17,60000,0,0,0,1000,1200,1400,300,400,500,0
+2,39,,1,0,0,2000,2100,2200,0,600,700,1
+2,42,90000,0,0,0,900,1000,1100,900,1000,1100,0
