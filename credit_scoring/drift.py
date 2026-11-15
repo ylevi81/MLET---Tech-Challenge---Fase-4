@@ -67,6 +67,8 @@ def column_drift(reference: pd.DataFrame, current: pd.DataFrame) -> pd.DataFrame
 
 def performance(scored: pd.DataFrame) -> dict:
     actual, predicted = scored[TARGET], scored[PREDICTION]
+    if actual.nunique() != 2:
+        raise ValueError("ROC AUC exige as duas classes no lote de avaliação.")
     return {
         "rows": len(scored),
         "default_rate": float(actual.mean()),
@@ -86,6 +88,9 @@ def monitor(
         raise FileNotFoundError(f"Nenhum lote mes_*.csv em {production_dir}. Rode simulate antes.")
     reference_batch = validate_batch(pd.read_csv(reference_path), labeled=True)
     batches = {path.stem: validate_batch(pd.read_csv(path), labeled=True) for path in batch_paths}
+    reference_ids = set(reference_batch[CUSTOMER_ID])
+    if any(reference_ids.intersection(batch[CUSTOMER_ID]) for batch in batches.values()):
+        raise ValueError("Referência e produção devem conter clientes distintos para evitar vazamento.")
 
     model = joblib.load(model_path)
     baseline = json.loads(model_path.with_name("metrics.json").read_text(encoding="utf-8"))
