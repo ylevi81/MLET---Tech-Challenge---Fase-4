@@ -12,10 +12,57 @@ from .baseline import split_reference, train_baseline
 from .contract import validate_batch
 from .data import download_reference, read_batch
 from .simulation import simulate_production
+from .observability import PipelineRun
 
 
 SOURCE_XLS = Path("data/credit_default.xls")
 PRODUCTION_DIR = Path("artifacts/production")
+
+
+def execute(args, run: PipelineRun) -> None:
+    if args.command == "validate":
+        with run.stage("ingestion"):
+            batch = validate_batch(read_batch(args.input), labeled=not args.sem_alvo)
+            run.fingerprint("input", args.input)
+        run.metrics({"pipeline/rows": len(batch)})
+        print(f"Lote aceito: {len(batch)} registro(s).")
+    elif args.command in ("train", "simulate"):
+        with run.stage("ingestion"):
+            source = args.input or download_reference(SOURCE_XLS)
+            batch = validate_batch(read_batch(source), labeled=True)
+            run.fingerprint("input", source)
+        run.metrics({"pipeline/input_rows": len(batch)})
+        if args.command == "train":
+            with run.stage("training"):
+                metrics = train_baseline(batch, args.output_dir)
+            run.metrics({"pipeline/rows": len(batch), **{
+                f"baseline/{key}": value for key, value in metrics.items()
+                if isinstance(value, (int, float))
+            }})
+            run.fingerprint("model", args.output_dir / "baseline.joblib")
+            run.artifact(args.output_dir / "metrics.json")
+            run.artifact(args.output_dir / "baseline.joblib")
+            print(json.dumps(metrics, indent=2))
+        else:
+            with run.stage("transformation"):
+                _, holdout = split_reference(batch)
+                paths = simulate_production(holdout, args.output_dir)
+            run.metrics({"pipeline/rows": len(holdout), "pipeline/batches": len(paths)})
+            run.artifact(args.output_dir / "cenario.json")
+            for path in paths:
+                run.fingerprint(path.stem, path)
+                print(f"Lote gravado: {path}")
+    else:
+        from .drift import monitor
+
+        with run.stage("drift"):
+            run.fingerprint("model", args.model)
+            run.fingerprint("reference", args.reference)
+            for path in sorted(args.production_dir.glob("mes_*.csv")):
+                run.fingerprint(path.stem, path)
+            summary = monitor(args.reference, args.production_dir, args.model, args.report_dir)
+            run.drift(summary, args.report_dir)
+        print_monitoring(summary, args.report_dir)
 
 
 def print_monitoring(summary: dict, report_dir: Path) -> None:
@@ -57,24 +104,8 @@ def main() -> int:
 
     args = parser.parse_args()
     try:
-        if args.command == "validate":
-            batch = validate_batch(read_batch(args.input), labeled=not args.sem_alvo)
-            print(f"Lote aceito: {len(batch)} registro(s).")
-        elif args.command == "train":
-            source = args.input or download_reference(SOURCE_XLS)
-            metrics = train_baseline(read_batch(source), args.output_dir)
-            print(json.dumps(metrics, indent=2))
-        elif args.command == "simulate":
-            source = args.input or download_reference(SOURCE_XLS)
-            _, holdout = split_reference(validate_batch(read_batch(source), labeled=True))
-            for path in simulate_production(holdout, args.output_dir):
-                print(f"Lote gravado: {path}")
-        else:
-            # O import tardio evita carregar o Evidently nos outros comandos.
-            from .drift import monitor
-
-            summary = monitor(args.reference, args.production_dir, args.model, args.report_dir)
-            print_monitoring(summary, args.report_dir)
+        with PipelineRun(args.command) as run:
+            execute(args, run)
     except (SchemaError, SchemaErrors) as error:
         print("Lote rejeitado pelo contrato. Ingestão bloqueada.", file=sys.stderr)
         summary = error.failure_cases.groupby(["column", "check"], dropna=False, sort=False).size()

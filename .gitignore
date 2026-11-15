@@ -3,3 +3,6 @@ __pycache__/
 /data/
 /artifacts/reference.csv
 /artifacts/production/
+/monitoring/
+/mlruns/
+/artifacts/review/
