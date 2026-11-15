@@ -1,0 +1,33 @@
+services:
+  mlflow:
+    build: .
+    image: credit-scoring:local
+    command: ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000", "--workers", "1", "--backend-store-uri", "sqlite:////state/mlflow.db", "--artifacts-destination", "/state/artifacts", "--allowed-hosts", "localhost:*,127.0.0.1:*,mlflow:*"]
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - tracking:/state
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:5000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+  pipeline:
+    image: credit-scoring:local
+    profiles: ["pipeline"]
+    working_dir: /state
+    environment:
+      PYTHONPATH: /app
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      CREDIT_MONITORING_DIR: /state/monitoring
+    volumes:
+      - pipeline:/state
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    entrypoint: ["python", "-m", "credit_scoring"]
+volumes:
+  tracking:
+  pipeline:

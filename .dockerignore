@@ -1,0 +1,7 @@
+*
+!requirements.txt
+!credit_scoring/
+!credit_scoring/*.py
+!examples/
+!examples/*.csv
+**/__pycache__/
