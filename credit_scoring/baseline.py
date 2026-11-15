@@ -27,6 +27,19 @@ HOLDOUT_SHARE = 0.2
 THRESHOLD = 0.5
 
 
+def split_reference(validated: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Separa a referência de treino da avaliação, que a etapa 2 usa como base de produção."""
+    # A ordenação torna a divisão reproduzível mesmo se o CSV vier em outra ordem.
+    ordered = validated.sort_values(CUSTOMER_ID)
+    reference, holdout = train_test_split(
+        ordered,
+        test_size=HOLDOUT_SHARE,
+        random_state=RANDOM_STATE,
+        stratify=ordered[TARGET],
+    )
+    return reference, holdout
+
+
 def train_baseline(batch: pd.DataFrame, output_dir: Path) -> dict:
     validated = validate_batch(batch, labeled=True)
     if len(validated) < MIN_SAMPLES:
@@ -35,14 +48,7 @@ def train_baseline(batch: pd.DataFrame, output_dir: Path) -> dict:
     if class_counts.size != 2 or class_counts.min() < 5:
         raise ValueError("O treinamento exige pelo menos cinco registros de cada classe.")
 
-    # A ordenação torna a divisão reproduzível mesmo se o CSV vier em outra ordem.
-    validated = validated.sort_values(CUSTOMER_ID)
-    reference, holdout = train_test_split(
-        validated,
-        test_size=HOLDOUT_SHARE,
-        random_state=RANDOM_STATE,
-        stratify=validated[TARGET],
-    )
+    reference, holdout = split_reference(validated)
 
     model = make_pipeline(
         StandardScaler(),
