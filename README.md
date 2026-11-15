@@ -255,3 +255,115 @@ Os testes cobrem regras do contrato, bloqueio antes da gravação, separação r
 Validação em 15/11/2026: **7 testes passaram**, `pip check` não apontou incompatibilidades e o fluxo Docker completo reproduziu AUC **0,706286**, seis lotes de 1.000 registros, drift a partir do mês 3 e alertas de desempenho nos meses 5 e 6. A consulta à API confirmou logs e artefatos persistidos, seis pontos mensais por métrica de modelo e seis alertas (quatro de drift + dois de desempenho). O serviço passou no healthcheck após recriação, preservando o histórico. Evidências agregadas desta execução: [`reports/observability_validation.json`](reports/observability_validation.json).
 
 Referências técnicas: [MLflow Tracking](https://mlflow.org/docs/latest/tracking), [armazenamento e servidor](https://mlflow.org/docs/latest/self-hosting) e [métricas psutil](https://psutil.readthedocs.io/stable/).
+
+## Etapa 4 · Governança, privacidade e causalidade
+
+Esta seção atende às tarefas teóricas da etapa 4 do enunciado. O projeto é uma demonstração acadêmica com dados históricos públicos; não concede crédito nem decide sobre pessoas em produção. Os controles abaixo distinguem o que o código já faz das políticas propostas para uma fintech. A documentação não representa certificação de conformidade.
+
+### Arquitetura e rastreabilidade
+
+```mermaid
+flowchart LR
+    A[XLS público UCI] --> B[Projeção e contrato Pandera]
+    B --> C[Referência: 24 mil clientes]
+    B --> D[Avaliação: 6 mil clientes distintos]
+    C --> E[Scaler e regressão logística]
+    D --> F[Simulação: seis lotes mensais]
+    F --> G[Contrato e predições]
+    E --> G
+    C --> H[Evidently: PSI e KS]
+    G --> H
+    H --> I[HTML, timeline e resumo]
+    B --> J[MLflow: runs e eventos]
+    E --> J
+    F --> J
+    I --> J
+```
+
+O contrato bloqueia entradas inválidas antes da gravação dos resultados. O monitor rejeita clientes compartilhados entre referência e produção. MLflow associa eventos, métricas e artefatos por `run_id`; hashes identificam o modelo e as entradas usadas. Isso permite investigar uma execução, mas hashes não anonimizam dados nem constituem assinatura de auditoria inviolável. O código e as dependências estão no Git; numa operação real, registrar também o commit e o digest da imagem em cada aprovação de modelo.
+
+### Inventário, minimização e Privacy by Default
+
+| Informação | Tratamento implementado | Risco e política proposta |
+| --- | --- | --- |
+| XLS original (`data/`) | Cópia local da fonte pública, fora do Git. Contém também campos descartados na seleção. | A seleção não apaga os campos da cópia original. Restringir acesso e aplicar a retenção abaixo. |
+| `customer_id` | Identificador da fonte mantido para unicidade, divisão e predições; excluído das features. | Não é anonimização comprovada. Em produção, substituir por token e guardar a correspondência em cofre separado. |
+| Idade, limite, faturas, pagamentos e alvo | Apenas as variáveis necessárias à demonstração entram no pipeline; sexo, escolaridade e estado civil não entram no modelo. | Dados financeiros e combinações de atributos podem permitir associação a indivíduos. Não publicar linhas nem tentar reidentificação. |
+| Referência, lotes e predições | Permanecem em arquivos locais ou no volume `pipeline`, fora do Git e sem upload como CSV ao MLflow. | São dados individuais, inclusive scores: acesso restrito a engenharia e ciência de dados autorizadas. |
+| Logs JSONL | Tipo de erro, etapa, resultado e agregados; sem linhas de clientes ou mensagem completa de exceção. | Revisar saídas de terminal antes de gravar o vídeo; o terminal de validação pode exibir valores inválidos. |
+| HTML, métricas e modelo | Relatórios agregados e modelo ficam no repositório e/ou no tracking. | Agregação não garante anonimato, sobretudo com grupos pequenos. Publicação acadêmica limitada à base pública; não replicar essa prática com clientes reais. |
+
+PII significa informação pessoal identificável; não é sinônimo da categoria legal de dado pessoal sensível. Dados financeiros exigem proteção, mas não são automaticamente dados sensíveis do art. 5º, II. Não há uso intencional de saúde, biometria, religião ou origem racial. A ausência de nome e CPF e a licença pública não comprovam anonimização. A simulação altera registros históricos, portanto seus lotes não são uma base integralmente sintética sem vínculo com a origem.
+
+Já implementado: minimização das features, exclusão dos arquivos individuais pelo `.gitignore`, logs reduzidos, containers sem privilégios e publicação do MLflow apenas em `127.0.0.1`. O `.gitignore` não controla acesso nem remove cópias já distribuídas. Não há autenticação de usuários no MLflow local, criptografia própria, expurgo automático ou controle de acesso por perfil implementado.
+
+Para produção, a política proposta exige autenticação com MFA, permissões por função, TLS, criptografia de discos e backups com chaves gerenciadas, segredos fora do Git, revisão de acessos trimestral e registro de acesso/exportação. Relatórios e modelos recebem a mesma restrição das evidências de crédito. O acesso externo permanece fechado até esses controles serem verificados.
+
+### Finalidade, base legal e direitos
+
+A finalidade acadêmica é avaliar a confiabilidade do pipeline, respeitando a licença CC BY 4.0 e a atribuição à UCI. Não se presume que licença de uso substitua base legal para tratar dados pessoais. Para a fintech hipotética, a base proposta para avaliação de risco é **proteção do crédito (art. 7º, X)**, sujeita à análise do tratamento concreto pelo controlador; ela não autoriza reutilização irrestrita ou tratamento de dados sensíveis. A finalidade e a necessidade de cada campo devem constar do inventário de tratamento.
+
+O plano prevê aviso de privacidade, canal do encarregado, verificação de identidade com dados mínimos, registro das solicitações e atendimento dos direitos aplicáveis. Para decisões exclusivamente automatizadas, prevê pedido de revisão e informação clara sobre critérios e procedimentos, preservados os segredos comercial e industrial. A revisão humana é uma escolha de governança deste plano. Referência: [LGPD, arts. 5º, 7º, 18 e 20 — texto atualizado na Câmara](https://www2.camara.leg.br/legin/fed/lei/2018/lei-13709-14-agosto-2018-787077-normaatualizada-pl.html).
+
+### Retenção e descarte
+
+Os prazos abaixo são **propostas internas para a demonstração**, não prazos legais universais e não estão automatizados. O responsável pela entrega registra a data de encerramento da avaliação e executa a revisão de descarte. Em produção, jurídico e encarregado aprovam uma matriz por finalidade, obrigações aplicáveis e eventuais bloqueios de eliminação antes da ingestão de clientes reais.
+
+| Classe | Prazo proposto e marco inicial | Destinação |
+| --- | --- | --- |
+| XLS, referência, lotes e predições individuais | Até 30 dias após o encerramento da avaliação acadêmica. | Excluir cópias locais, exportações e dados correspondentes nos volumes, após inventário e confirmação de que não há obrigação de preservação. |
+| Logs, banco MLflow, modelos e relatórios privados | Até 90 dias após o encerramento da avaliação. | Preservar apenas evidência agregada necessária; expurgar runs, artefatos e cópias correlatas de forma coordenada. |
+| Backups que venham a ser criados | Expiração em até 30 dias após exclusão na origem. | Restringir restauração e reaplicar exclusões após recuperação. Backups não são criados pelo projeto. |
+| Código, README e relatórios acadêmicos já publicados | Revisão anual a partir da entrega, condicionada à finalidade educacional e à ausência de dados identificáveis. | Remover conteúdo inadequado; se houver exposição individual, tratar também histórico Git e cópias conhecidas. Não prometer revogação de clones públicos. |
+
+Registrar no comprovante de descarte: classe de informação, local, data, responsável e resultado, sem reproduzir dados individuais. Apagar somente arquivos de trabalho não elimina artefatos das runs nem volumes Docker. O procedimento exige inventário; `docker compose down -v` não deve ser usado como expurgo seletivo. Exceções de retenção precisam de justificativa, acesso limitado e data de revisão.
+
+### Responsabilidades e incidentes
+
+Na demonstração, a equipe do projeto assume a manutenção da documentação e a revisão de artefatos. Para produção, os papéis propostos são: controlador/gestão de crédito aprova finalidade e uso; engenharia responde por contratos e operação; ciência de dados investiga drift e desempenho; segurança responde por acesso e incidentes; encarregado/jurídico responde por privacidade, retenção e solicitações. São responsabilidades propostas, sem pessoas ou canais operacionais fictícios atribuídos.
+
+Em suspeita de vazamento: restringir o acesso afetado, preservar evidências sem copiar dados desnecessários, acionar segurança e encarregado, avaliar titulares e impacto, corrigir a causa e registrar as medidas. Quando houver risco ou dano relevante, o controlador deve observar a comunicação à ANPD e aos titulares, em regra em três dias úteis do conhecimento de que o incidente afetou dados pessoais, ressalvadas regras específicas aplicáveis. Referência: [ANPD — Comunicação de Incidente de Segurança](https://www.gov.br/anpd/pt-br/canais_atendimento/agente-de-tratamento/comunicado-de-incidente-de-seguranca-cis). Um alerta de drift, isoladamente, não é evidência de incidente de privacidade.
+
+### Causalidade: mecanismo simulado e limites da evidência
+
+A hipótese do cenário é que o aumento das faturas sem crescimento dos pagamentos e a entrada de clientes com limites menores elevem o comprometimento do crédito. A implementação aumenta faturas em até 80%, altera probabilisticamente idade e limite e converte parte dos adimplentes com utilização de pelo menos 70% em inadimplentes. Não há variável de renda ou inflação observada; esses nomes descrevem o cenário construído.
+
+```mermaid
+flowchart LR
+    A[Choque simulado] --> B[Faturas maiores]
+    A --> C[Perfil: idade e limite]
+    B --> D[Utilização: fatura / limite]
+    C --> D
+    D --> E[Regra probabilística altera o alvo]
+    B --> F[Modelo fixo gera score]
+    C --> F
+    E --> G[Desempenho observado]
+    F --> G
+```
+
+O diagrama descreve as regras do gerador, não um efeito causal identificado na economia real. A mudança das entradas caracteriza data drift; a regra adicional de inadimplência introduz mudança de conceito no cenário. PSI e KS medem mudança de distribuição, não demonstram sozinhos concept drift nem causalidade. A queda de desempenho com rótulos disponíveis complementa o diagnóstico; em produção, ela só poderá ser medida após maturação do alvo.
+
+As evidências em [`drift_summary.json`](reports/drift_summary.json) e [`drift_timeline.csv`](reports/drift_timeline.csv) mostram: mês 1 sem alerta, primeiro drift no mês 3 e alerta de desempenho nos meses 5 e 6. No mês 6, cinco features mudam; a AUC cai de 0,7063 no baseline separado para 0,6724 e o recall de 62,32% para 47,62%. Dos 357 inadimplentes, 187 não são detectados. Isso indica risco de crédito não capturado, mas não permite estimar prejuízo financeiro sem exposição e perda por cliente.
+
+O coeficiente negativo da fatura ajuda a explicar por que seu aumento pode reduzir o score, mantidas as demais features, mas não prova que faturas maiores causem menor risco real. As intervenções são simultâneas e cada mês usa clientes distintos; portanto a série não isola o efeito de cada mudança. O controle do mês 1 e as features de pagamento inalteradas ajudam a interpretar a simulação, sem eliminar essa limitação.
+
+Para investigar a contribuição de cada mecanismo, o plano é comparar, sobre os mesmos clientes e sorteios controlados, quatro cenários: sem choque, apenas faturas, apenas perfil e apenas alteração do alvo, além do cenário combinado. Comparar métricas com intervalos de incerteza e repetir sementes antes de atribuir efeitos. Essa ablação é proposta e **não foi executada nesta entrega**. Em dados reais, também seria necessário investigar mudanças de seleção, política de concessão, captura de dados e maturação de rótulos.
+
+### Prescrição, mitigação de vieses e aprovação
+
+| Gatilho implementado | Resposta operacional proposta | Responsável proposto |
+| --- | --- | --- |
+| Contrato rejeitado, código 2 | Quarentenar lote, corrigir origem e revalidar; não relaxar regras para aceitar o erro. O bloqueio já é automático, a quarentena operacional é proposta. | Engenharia |
+| Drift: PSI ≥ 0,1 e KS < 0,05 | Investigar origem/perfil, verificar contrato e acompanhar segmentos; não retreinar somente por p-valor. | Ciência de dados |
+| AUC < baseline − 0,03 ou recall < baseline − 0,10 | Priorizar investigação e propor revisão manual das decisões afetadas; avaliar suspensão do uso automático conforme impacto. | Ciência de dados e gestão de crédito |
+| Falha de execução ou tracking | Corrigir indisponibilidade, preservar evidências e repetir o job; ausência de métrica não significa modelo saudável. | Engenharia |
+
+O MLflow registra os alertas, mas não envia notificações, não suspende decisões e não retreina automaticamente. O cenário atual já satisfaz o gatilho de investigação de desempenho nos meses 5 e 6.
+
+Excluir sexo, escolaridade e estado civil não garante ausência de discriminação: idade e limite podem atuar como proxies. Antes de uso real, o plano é medir recall, falsos positivos, calibração e taxa de aprovação por faixas etárias e outros grupos cuja avaliação tenha finalidade e base jurídica definidas, com tamanho mínimo de amostra e incerteza. Falsos negativos aumentam risco de inadimplência; falsos positivos podem negar crédito indevidamente. Diferenças materiais devem ser investigadas e revisadas pela gestão de risco, sem publicar células pequenas. **Essa auditoria de equidade ainda não foi implementada**, e a base histórica de Taiwan não valida uso em clientes brasileiros.
+
+Um candidato a retreino só seria promovido após avaliação em janela independente com rótulos maduros, comparação com o modelo atual, revisão de vieses e aprovação registrada. Como critérios técnicos iniciais propostos, exigir AUC e recall dentro das tolerâncias do baseline, análise de custos de erro e ausência de disparidades sem justificativa aceitável. Guardar versão anterior para rollback; rollback só resolve se a versão anterior for validada para o cenário atual. Ajuste de limiar, novas features ou recalibração exigem nova avaliação, não aprovação automática.
+
+### Vídeo STAR
+
+**Link do vídeo:** inserir aqui.
