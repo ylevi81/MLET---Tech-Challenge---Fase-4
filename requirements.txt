@@ -1,3 +1,4 @@
+evidently==0.7.23
 joblib==1.5.3
 pandas==2.3.0
 pandera[pandas]==0.30.1
