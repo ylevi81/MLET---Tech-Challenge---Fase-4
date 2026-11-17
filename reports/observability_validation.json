@@ -1,0 +1,122 @@
+{
+  "train": {
+    "run_id": "e91678dfef2b47d0bf6ac9e7ff405d97",
+    "status": "FINISHED",
+    "outcome": "success",
+    "metrics": {
+      "stage/ingestion/success": 1.0,
+      "stage/ingestion/duration_seconds": 3.8184648600001765,
+      "pipeline/input_rows": 30000.0,
+      "stage/training/success": 1.0,
+      "stage/training/duration_seconds": 0.1801070349999918,
+      "pipeline/rows": 30000.0,
+      "baseline/seed": 42.0,
+      "baseline/threshold": 0.5,
+      "baseline/reference_rows": 24000.0,
+      "baseline/holdout_rows": 6000.0,
+      "baseline/reference_default_rate": 0.22120833333333334,
+      "baseline/holdout_default_rate": 0.22116666666666668,
+      "baseline/roc_auc": 0.7062863818201728,
+      "baseline/average_precision": 0.48484749005460015,
+      "baseline/balanced_accuracy": 0.6607384434075985,
+      "baseline/default_precision": 0.36969155118462227,
+      "baseline/default_recall": 0.6232102486812359,
+      "infra/process_rss_mb": 304.7421875,
+      "infra/process_cpu_seconds": 7.13,
+      "infra/host_memory_percent": 41.2,
+      "infra/disk_free_gb": 931.9923629760742,
+      "pipeline/duration_seconds": 4.1947072420000495,
+      "pipeline/success": 1.0,
+      "alerts/failure": 0.0,
+      "alerts/contract": 0.0,
+      "infra/peak_sampled_rss_mb": 304.7421875
+    },
+    "artifacts": [
+      "baseline.joblib",
+      "e91678dfef2b47d0bf6ac9e7ff405d97.jsonl",
+      "metrics.json"
+    ]
+  },
+  "simulate": {
+    "run_id": "60f315fecc04420ea45807e4528e0e40",
+    "status": "FINISHED",
+    "outcome": "success",
+    "metrics": {
+      "stage/ingestion/success": 1.0,
+      "stage/ingestion/duration_seconds": 1.0307350489999862,
+      "pipeline/input_rows": 30000.0,
+      "stage/transformation/success": 1.0,
+      "stage/transformation/duration_seconds": 0.08037271900002452,
+      "pipeline/rows": 6000.0,
+      "pipeline/batches": 6.0,
+      "infra/process_rss_mb": 294.46484375,
+      "infra/process_cpu_seconds": 6.0600000000000005,
+      "infra/host_memory_percent": 40.8,
+      "infra/disk_free_gb": 931.9919929504395,
+      "pipeline/duration_seconds": 1.3341950240001097,
+      "pipeline/success": 1.0,
+      "alerts/failure": 0.0,
+      "alerts/contract": 0.0,
+      "infra/peak_sampled_rss_mb": 294.46484375
+    },
+    "artifacts": [
+      "60f315fecc04420ea45807e4528e0e40.jsonl",
+      "cenario.json"
+    ]
+  },
+  "drift": {
+    "run_id": "38301ffb026f4b05a0a2be6a3e408bb6",
+    "status": "FINISHED",
+    "outcome": "success",
+    "metrics": {
+      "model/roc_auc": 0.6724366262834839,
+      "model/default_recall": 0.47619047619047616,
+      "model/default_rate": 0.357,
+      "model/predicted_default_rate": 0.313,
+      "drift/features": 5.0,
+      "alerts/drift": 1.0,
+      "alerts/performance": 1.0,
+      "batch/rows": 1000.0,
+      "pipeline/rows": 6000.0,
+      "pipeline/alerts": 6.0,
+      "stage/drift/success": 1.0,
+      "stage/drift/duration_seconds": 8.091844811999863,
+      "infra/process_rss_mb": 368.58984375,
+      "infra/process_cpu_seconds": 14.540000000000001,
+      "infra/host_memory_percent": 41.5,
+      "infra/disk_free_gb": 931.981502532959,
+      "pipeline/duration_seconds": 9.973762895000164,
+      "pipeline/success": 1.0,
+      "alerts/failure": 0.0,
+      "alerts/contract": 0.0,
+      "infra/peak_sampled_rss_mb": 370.08203125
+    },
+    "artifacts": [
+      "38301ffb026f4b05a0a2be6a3e408bb6.jsonl",
+      "drift_report.html",
+      "drift_summary.json",
+      "drift_timeline.csv"
+    ]
+  },
+  "validate": {
+    "run_id": "ade065ad9c214952a60b72b9ffcb7f07",
+    "status": "FAILED",
+    "outcome": "rejected",
+    "metrics": {
+      "stage/ingestion/success": 0.0,
+      "stage/ingestion/duration_seconds": 0.06465675099980217,
+      "infra/process_rss_mb": 249.46875,
+      "infra/process_cpu_seconds": 4.98,
+      "infra/host_memory_percent": 38.0,
+      "infra/disk_free_gb": 931.981029510498,
+      "pipeline/duration_seconds": 0.11692183700006353,
+      "pipeline/success": 0.0,
+      "alerts/failure": 1.0,
+      "alerts/contract": 1.0,
+      "infra/peak_sampled_rss_mb": 249.46875
+    },
+    "artifacts": [
+      "ade065ad9c214952a60b72b9ffcb7f07.jsonl"
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "reference_rows": 24000,
+  "report_batch": "mes_06",
+  "rules": {
+    "psi_limit": 0.1,
+    "psi_strong": 0.25,
+    "ks_alpha": 0.05,
+    "dataset_drift_share": 0.3,
+    "baseline_roc_auc": 0.7062863818201728,
+    "baseline_default_recall": 0.6232102486812359,
+    "auc_tolerance": 0.03,
+    "recall_tolerance": 0.1
+  },
+  "months": [
+    {
+      "batch": "mes_01",
+      "rows": 1000,
+      "default_rate": 0.212,
+      "predicted_default_rate": 0.371,
+      "roc_auc": 0.7049911406953357,
+      "default_recall": 0.6179245283018868,
+      "default_precision": 0.353099730458221,
+      "drifted_features": [],
+      "score_drift": false,
+      "performance_alert": false
+    },
+    {
+      "batch": "mes_02",
+      "rows": 1000,
+      "default_rate": 0.24,
+      "predicted_default_rate": 0.346,
+      "roc_auc": 0.7353673245614035,
+      "default_recall": 0.6125,
+      "default_precision": 0.42485549132947975,
+      "drifted_features": [],
+      "score_drift": false,
+      "performance_alert": false
+    },
+    {
+      "batch": "mes_03",
+      "rows": 1000,
+      "default_rate": 0.256,
+      "predicted_default_rate": 0.339,
+      "roc_auc": 0.7106697328629032,
+      "default_recall": 0.58984375,
+      "default_precision": 0.44542772861356933,
+      "drifted_features": [
+        "age"
+      ],
+      "score_drift": false,
+      "performance_alert": false
+    },
+    {
+      "batch": "mes_04",
+      "rows": 1000,
+      "default_rate": 0.287,
+      "predicted_default_rate": 0.335,
+      "roc_auc": 0.6961604058036173,
+      "default_recall": 0.5365853658536586,
+      "default_precision": 0.4597014925373134,
+      "drifted_features": [
+        "age",
+        "bill_amount_m1",
+        "bill_amount_m2",
+        "bill_amount_m3"
+      ],
+      "score_drift": false,
+      "performance_alert": false
+    },
+    {
+      "batch": "mes_05",
+      "rows": 1000,
+      "default_rate": 0.325,
+      "predicted_default_rate": 0.305,
+      "roc_auc": 0.6545094017094018,
+      "default_recall": 0.4461538461538462,
+      "default_precision": 0.47540983606557374,
+      "drifted_features": [
+        "age",
+        "bill_amount_m1",
+        "bill_amount_m2",
+        "bill_amount_m3"
+      ],
+      "score_drift": false,
+      "performance_alert": true
+    },
+    {
+      "batch": "mes_06",
+      "rows": 1000,
+      "default_rate": 0.357,
+      "predicted_default_rate": 0.313,
+      "roc_auc": 0.6724366262834839,
+      "default_recall": 0.47619047619047616,
+      "default_precision": 0.5431309904153354,
+      "drifted_features": [
+        "age",
+        "credit_limit",
+        "bill_amount_m1",
+        "bill_amount_m2",
+        "bill_amount_m3"
+      ],
+      "score_drift": false,
+      "performance_alert": true
+    }
+  ]
+}

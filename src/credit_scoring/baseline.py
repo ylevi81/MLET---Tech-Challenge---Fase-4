@@ -1,7 +1,10 @@
 """Treinamento e avaliação da regressão logística de referência."""
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Any
 
 import joblib
 import pandas as pd
@@ -18,8 +21,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from .contract import CUSTOMER_ID, FEATURES, TARGET, validate_batch
-
+from credit_scoring.contract import CUSTOMER_ID, FEATURES, TARGET, validate_batch
 
 RANDOM_STATE = 42
 MIN_SAMPLES = 5_000
@@ -27,7 +29,20 @@ HOLDOUT_SHARE = 0.2
 THRESHOLD = 0.5
 
 
-def train_baseline(batch: pd.DataFrame, output_dir: Path) -> dict:
+def split_reference(validated: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Separa a referência de treino da avaliação, que a etapa 2 usa como base de produção."""
+    # A ordenação torna a divisão reproduzível mesmo se o CSV vier em outra ordem.
+    ordered = validated.sort_values(CUSTOMER_ID)
+    reference, holdout = train_test_split(
+        ordered,
+        test_size=HOLDOUT_SHARE,
+        random_state=RANDOM_STATE,
+        stratify=ordered[TARGET],
+    )
+    return reference, holdout
+
+
+def train_baseline(batch: pd.DataFrame, output_dir: Path) -> dict[str, Any]:
     validated = validate_batch(batch, labeled=True)
     if len(validated) < MIN_SAMPLES:
         raise ValueError(f"O treinamento exige pelo menos {MIN_SAMPLES} registros válidos.")
@@ -35,14 +50,7 @@ def train_baseline(batch: pd.DataFrame, output_dir: Path) -> dict:
     if class_counts.size != 2 or class_counts.min() < 5:
         raise ValueError("O treinamento exige pelo menos cinco registros de cada classe.")
 
-    # A ordenação torna a divisão reproduzível mesmo se o CSV vier em outra ordem.
-    validated = validated.sort_values(CUSTOMER_ID)
-    reference, holdout = train_test_split(
-        validated,
-        test_size=HOLDOUT_SHARE,
-        random_state=RANDOM_STATE,
-        stratify=validated[TARGET],
-    )
+    reference, holdout = split_reference(validated)
 
     model = make_pipeline(
         StandardScaler(),
@@ -54,7 +62,7 @@ def train_baseline(batch: pd.DataFrame, output_dir: Path) -> dict:
     scores = model.predict_proba(holdout[FEATURES])[:, 1]
     predicted = (scores >= THRESHOLD).astype(int)
     tn, fp, fn, tp = confusion_matrix(actual, predicted, labels=[0, 1]).ravel()
-    metrics = {
+    metrics: dict[str, Any] = {
         "seed": RANDOM_STATE,
         "threshold": THRESHOLD,
         "reference_rows": len(reference),

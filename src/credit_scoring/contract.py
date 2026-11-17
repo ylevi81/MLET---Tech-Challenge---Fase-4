@@ -1,8 +1,9 @@
 """Contrato de entrada para dados de referência e lotes de pontuação."""
 
+from __future__ import annotations
+
 import pandas as pd
 import pandera.pandas as pa
-
 
 CUSTOMER_ID = "customer_id"
 TARGET = "default_next_month"

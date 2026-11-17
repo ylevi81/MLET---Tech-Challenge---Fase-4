@@ -1,5 +1,7 @@
 """Leitura do arquivo original da UCI e do CSV definido no contrato."""
 
+from __future__ import annotations
+
 from pathlib import Path
 from shutil import copyfileobj
 from tempfile import TemporaryDirectory
@@ -8,8 +10,7 @@ from zipfile import ZipFile
 
 import pandas as pd
 
-from .contract import CUSTOMER_ID, SOURCE_FEATURES, TARGET
-
+from credit_scoring.contract import CUSTOMER_ID, SOURCE_FEATURES, TARGET
 
 SOURCE_URL = (
     "https://archive.ics.uci.edu/static/public/350/"

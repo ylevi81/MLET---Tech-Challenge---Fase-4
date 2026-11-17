@@ -1,4 +1,11 @@
 .venv/
 __pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
 /data/
 /artifacts/reference.csv
+/artifacts/production/
+/monitoring/
+/mlruns/
+/artifacts/review/
