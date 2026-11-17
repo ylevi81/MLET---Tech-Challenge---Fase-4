@@ -16,7 +16,7 @@ Na raiz do repositório, com Python 3.13 e PowerShell:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -e .
 .\.venv\Scripts\python.exe -m credit_scoring train
 ```
 
@@ -83,7 +83,7 @@ Todos os lotes passam pelo contrato da etapa 1 antes de serem gravados. O contra
 Depois do treino da etapa 1, que gera `artifacts/reference.csv`:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -e .
 .\.venv\Scripts\python.exe -m credit_scoring simulate
 .\.venv\Scripts\python.exe -m credit_scoring drift
 ```
@@ -203,7 +203,7 @@ Se apenas quiser repetir o diagnóstico com modelo e lotes já gerados, rode `do
 
 ### Execução local sem Docker
 
-Os comandos das etapas anteriores passam a registrar execuções automaticamente, mesmo sem servidor aberto. Depois de instalar `requirements.txt`, rode `train`, `simulate`, `drift` e a validação inválida conforme as seções anteriores. Para consultar o histórico:
+Os comandos das etapas anteriores passam a registrar execuções automaticamente, mesmo sem servidor aberto. Depois de instalar o pacote com `pip install -e .`, rode `train`, `simulate`, `drift` e a validação inválida conforme as seções anteriores. Para consultar o histórico:
 
 ```powershell
 .\.venv\Scripts\mlflow.exe server --backend-store-uri sqlite:///monitoring/mlflow.db --host 127.0.0.1 --port 5000 --workers 1

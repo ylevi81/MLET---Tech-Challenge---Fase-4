@@ -19,7 +19,6 @@ services:
     profiles: ["pipeline"]
     working_dir: /state
     environment:
-      PYTHONPATH: /app
       MLFLOW_TRACKING_URI: http://mlflow:5000
       CREDIT_MONITORING_DIR: /state/monitoring
     volumes:

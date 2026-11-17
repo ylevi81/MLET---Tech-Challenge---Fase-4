@@ -1,7 +1,11 @@
 *
 !requirements.txt
-!credit_scoring/
-!credit_scoring/*.py
+!pyproject.toml
+!README.md
+!src/
+!src/credit_scoring/
+!src/credit_scoring/*.py
 !examples/
 !examples/*.csv
 **/__pycache__/
+**/*.egg-info/
