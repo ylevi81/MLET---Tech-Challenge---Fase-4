@@ -1,7 +1,10 @@
 """Treinamento e avaliação da regressão logística de referência."""
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Any
 
 import joblib
 import pandas as pd
@@ -18,8 +21,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from .contract import CUSTOMER_ID, FEATURES, TARGET, validate_batch
-
+from credit_scoring.contract import CUSTOMER_ID, FEATURES, TARGET, validate_batch
 
 RANDOM_STATE = 42
 MIN_SAMPLES = 5_000
@@ -40,7 +42,7 @@ def split_reference(validated: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame
     return reference, holdout
 
 
-def train_baseline(batch: pd.DataFrame, output_dir: Path) -> dict:
+def train_baseline(batch: pd.DataFrame, output_dir: Path) -> dict[str, Any]:
     validated = validate_batch(batch, labeled=True)
     if len(validated) < MIN_SAMPLES:
         raise ValueError(f"O treinamento exige pelo menos {MIN_SAMPLES} registros válidos.")
@@ -60,7 +62,7 @@ def train_baseline(batch: pd.DataFrame, output_dir: Path) -> dict:
     scores = model.predict_proba(holdout[FEATURES])[:, 1]
     predicted = (scores >= THRESHOLD).astype(int)
     tn, fp, fn, tp = confusion_matrix(actual, predicted, labels=[0, 1]).ravel()
-    metrics = {
+    metrics: dict[str, Any] = {
         "seed": RANDOM_STATE,
         "threshold": THRESHOLD,
         "reference_rows": len(reference),

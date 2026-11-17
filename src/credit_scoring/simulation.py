@@ -1,5 +1,7 @@
 """Lotes mensais de produção com inflação, novo perfil de clientes e mudança de conceito."""
 
+from __future__ import annotations
+
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -7,8 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .contract import CUSTOMER_ID, TARGET, validate_batch
-
+from credit_scoring.contract import CUSTOMER_ID, TARGET, validate_batch
 
 BILL_COLUMNS = [f"bill_amount_m{month}" for month in range(1, 4)]
 LIMIT_STEP = 10_000
@@ -65,7 +66,7 @@ def simulate_production(
 
     months = [
         validate_batch(drift_batch(shuffled.iloc[rows], intensity, scenario, rng), labeled=True)
-        for rows, intensity in zip(positions, intensities)
+        for rows, intensity in zip(positions, intensities, strict=True)
     ]
 
     output_dir.mkdir(parents=True, exist_ok=True)

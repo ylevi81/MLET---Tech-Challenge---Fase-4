@@ -1,7 +1,10 @@
 """Predições, testes PSI e Kolmogorov-Smirnov e relatório Evidently dos lotes de produção."""
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Any
 
 import joblib
 import pandas as pd
@@ -10,9 +13,8 @@ from evidently.metrics import ValueDrift
 from evidently.presets import ClassificationPreset, DataDriftPreset
 from sklearn.metrics import precision_score, recall_score, roc_auc_score
 
-from .baseline import THRESHOLD
-from .contract import CUSTOMER_ID, FEATURES, TARGET, validate_batch
-
+from credit_scoring.baseline import THRESHOLD
+from credit_scoring.contract import CUSTOMER_ID, FEATURES, TARGET, validate_batch
 
 SCORE = "default_score"
 PREDICTION = "predicted_default"
@@ -49,7 +51,11 @@ def as_dataset(scored: pd.DataFrame) -> Dataset:
 
 def column_drift(reference: pd.DataFrame, current: pd.DataFrame) -> pd.DataFrame:
     """Uma coluna só é marcada quando PSI e KS concordam, o que reduz falsos alarmes."""
-    tests = [ValueDrift(column=column, method=method) for column in MONITORED for method in ("psi", "ks")]
+    tests = [
+        ValueDrift(column=column, method=method)
+        for column in MONITORED
+        for method in ("psi", "ks")
+    ]
     snapshot = Report(tests).run(as_dataset(current), as_dataset(reference))
     values: dict[str, dict[str, float]] = {}
     for result in snapshot.dict()["metrics"]:
@@ -65,7 +71,7 @@ def column_drift(reference: pd.DataFrame, current: pd.DataFrame) -> pd.DataFrame
     return table
 
 
-def performance(scored: pd.DataFrame) -> dict:
+def performance(scored: pd.DataFrame) -> dict[str, Any]:
     actual, predicted = scored[TARGET], scored[PREDICTION]
     if actual.nunique() != 2:
         raise ValueError("ROC AUC exige as duas classes no lote de avaliação.")
@@ -81,7 +87,7 @@ def performance(scored: pd.DataFrame) -> dict:
 
 def monitor(
     reference_path: Path, production_dir: Path, model_path: Path, report_dir: Path
-) -> dict:
+) -> dict[str, Any]:
     """Valida todos os lotes antes de pontuar e grava o resumo, a série mensal e o HTML."""
     batch_paths = sorted(production_dir.glob("mes_*.csv"))
     if not batch_paths:
@@ -90,7 +96,9 @@ def monitor(
     batches = {path.stem: validate_batch(pd.read_csv(path), labeled=True) for path in batch_paths}
     reference_ids = set(reference_batch[CUSTOMER_ID])
     if any(reference_ids.intersection(batch[CUSTOMER_ID]) for batch in batches.values()):
-        raise ValueError("Referência e produção devem conter clientes distintos para evitar vazamento.")
+        raise ValueError(
+            "Referência e produção devem conter clientes distintos para evitar vazamento."
+        )
 
     model = joblib.load(model_path)
     baseline = json.loads(model_path.with_name("metrics.json").read_text(encoding="utf-8"))
@@ -120,16 +128,24 @@ def monitor(
     report = Report(
         [
             DataDriftPreset(
-                columns=MONITORED, method="psi", threshold=PSI_LIMIT, drift_share=DATASET_DRIFT_SHARE
+                columns=MONITORED,
+                method="psi",
+                threshold=PSI_LIMIT,
+                drift_share=DATASET_DRIFT_SHARE,
             ),
             DataDriftPreset(
-                columns=MONITORED, method="ks", threshold=KS_ALPHA, drift_share=DATASET_DRIFT_SHARE
+                columns=MONITORED,
+                method="ks",
+                threshold=KS_ALPHA,
+                drift_share=DATASET_DRIFT_SHARE,
             ),
             ClassificationPreset(),
         ]
     )
     report_dir.mkdir(parents=True, exist_ok=True)
-    report.run(as_dataset(latest), as_dataset(reference)).save_html(str(report_dir / "drift_report.html"))
+    report.run(as_dataset(latest), as_dataset(reference)).save_html(
+        str(report_dir / "drift_report.html")
+    )
 
     timeline = pd.concat(tables, ignore_index=True)
     timeline[["batch", "column", "psi", "ks_pvalue", "drift", "severity"]].to_csv(
