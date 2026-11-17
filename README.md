@@ -366,4 +366,4 @@ Um candidato a retreino só seria promovido após avaliação em janela independ
 
 ### Vídeo STAR
 
-**Link do vídeo:** inserir aqui.
+**Link do vídeo:** [Apresentação STAR — Tech Challenge Fase 4](https://drive.google.com/file/d/1RMpl4p0oJzk2ydMrEyQ2PLxd9WMVJj5F/view?usp=sharing)
